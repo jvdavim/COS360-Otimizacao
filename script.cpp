@@ -17,24 +17,21 @@ std::valarray<double> grad(std::valarray<double>& x){
 }
 
 double armijo(std::valarray<double>& x, std::valarray<double>& d, double g, double n ){
+    // Funcao de armijo. Retorna um tamanho de passo
     double t = 1;
-    std::valarray<double> arg = x + d*t;
+    std::valarray<double> arg = x + t*d;
     while (f(arg) > f(x) + n*t*((grad(x)*d).sum())){
-        std::cout << "t = " << t << std::endl;
-        std::cout << "g = " << g << std::endl;
         t = g*t;
+        arg = x + t*d;
     }
     return t;
 }
 
 int main(){
-
 double initx[] = {0, -1, 1};
 double initd[] = {1, 0, 0};
 std::valarray<double> x (initx, 3);
 std::valarray<double> d (initd, 3);
 std::cout << armijo(x, d, 0.8, 0.25) << std::endl;
-std::cout << "Hello World" << std::endl;
-
 return 0;
 }
