@@ -36,19 +36,18 @@ std::valarray<double> gradiente(std::valarray<double> x){
     while (t > epslon){
         d = grad(x)*(-1.0);
         t = armijo(x, d, 0.8, 0.25);
-        std::cout<<t<<std::endl;
         x = x + t*d;
-        // getchar();
+        if (grad(x).sum() < 1.8*pow(10,307)){
+            std::cout << "ERRO: Funcao nao possui ponto estacionario" << std::endl;
+            exit(EXIT_FAILURE);
+        }
     }
     return x;
 }
 
 int main(){
-double initx[] = {3, 2, 8};
-// double initd[] = {-1, 0};
+double initx[] = {-2, 1, 1};
 std::valarray<double> x (initx, 3);
-// std::valarray<double> d (initd, 2);
-// std::cout << armijo(x, d, 0.8, 0.25) << std::endl;
 std::cout << "( " << gradiente(x)[0] << ", " << gradiente(x)[1] << ", " << gradiente(x)[2] << " )" << std::endl;
 return 0;
 }
