@@ -3,6 +3,7 @@
 
 
 double norma(std::valarray<double> x){
+    // Funcao norma. Calcula a norma do vetor x
     return sqrt(pow(x[0], 2) + pow(x[1], 2) + pow(x[2], 2));
 }
 
@@ -30,6 +31,7 @@ double armijo(std::valarray<double> x, std::valarray<double> d, double g, double
 }
 
 std::valarray<double> gradiente(std::valarray<double> x){
+    // Metodo do gradiente. Retorna um ponto estacionario usando o passo calculado por armijo
     double epslon = 0.000000927;
     double t = 1;
     std::valarray<double> d;
@@ -46,8 +48,9 @@ std::valarray<double> gradiente(std::valarray<double> x){
 }
 
 int main(){
-double initx[] = {-2, 1, 1};
-std::valarray<double> x (initx, 3);
-std::cout << "( " << gradiente(x)[0] << ", " << gradiente(x)[1] << ", " << gradiente(x)[2] << " )" << std::endl;
-return 0;
+    // Testes
+    double initx[] = {-2, 1, 1};
+    std::valarray<double> x (initx, 3);
+    std::cout << "( " << gradiente(x)[0] << ", " << gradiente(x)[1] << ", " << gradiente(x)[2] << " )" << std::endl;
+    return 0;
 }
