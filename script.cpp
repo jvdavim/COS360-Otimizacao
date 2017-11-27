@@ -7,16 +7,33 @@ double f(std::valarray<double> x){
     return pow(x[0], 3) + pow(x[1], 3) + pow(x[2], 3);
 }
 
+double P(std::valarray<double> x){
+	double fator = pow(x[0], 2) + pow(x[1], 2) + pow(x[2], 2);
+	return fator-2*sqrt(fator) + 1;
+}
+
+double fi(std::valarray<double x>, double rho=1.0){
+	return f(x) + rho*P(x);
+}
+
 double norma(std::valarray<double> x){
     return sqrt(pow(x[0], 2) + pow(x[1], 2) + pow(x[2], 2));
 }
 
-std::valarray<double> grad(std::valarray<double> x){
+std::valarray<double> grad(std::valarray<double> x, double rho=1.0, bool penExt=false){
     // Funcao gradiente de f() no ponto x
     std::valarray<double> resultado (3);
-    resultado[0] = 3*pow(x[0], 2);
-    resultado[1] = 3*pow(x[1], 2);
-    resultado[2] = 3*pow(x[2], 2);
+    if (penExt==true){
+    	double fator = sqrt(pow(x[0], 2) + pow(x[1], 2) + pow(x[2], 2));
+    	resultado[0] = 3*pow(x[0],2) + 2*rho*x[0]*(1 - 1/fator);
+    	resultado[1] = 3*pow(x[1],2) + 2*rho*x[1]*(1 - 1/fator);
+    	resultado[2] = 3*pow(x[2],2) + 2*rho*x[2]*(1 - 1/fator);
+    }
+    else {
+		resultado[0] = 3*pow(x[0], 2);
+	    resultado[1] = 3*pow(x[1], 2);
+	    resultado[2] = 3*pow(x[2], 2);
+    }
     return resultado;
 }
 
@@ -42,6 +59,32 @@ std::valarray< std::valarray<double> > hessiana(std::valarray<double> x){
     std::valarray<double> b (l2, 3);
     std::valarray<double> c (l3, 3);
     //===
+    M[0] = a;
+    M[1] = b;
+    M[2] = c;
+
+    return M;
+}
+
+std::valarray< std::valarray<double> > getHessiana(std::valarray<double> x, double rho=3.0){
+    std::valarray< std::valarray<double> > M (3);
+    double l1[3];
+    double l2[3];
+    double l3[3];
+    double div = pow((pow(x[0], 2) + pow(x[1], 2) + pow(x[2], 2)), 1.5);
+    l1[0] = 6*x[0] + 2*rho*(1 - (pow(x[1],2) + pow(x[2],2))/div);
+    l1[1] = 2*rho*x[0]*x[1]/div;
+    l1[2] = 2*rho*x[0]*x[2]/div;
+    l2[0] = 2*rho*x[1]*x[0]/div;
+    l2[1] = 6*x[1] + 2*rho*(1 - (pow(x[0],2) + pow(x[2],2))/div);
+    l2[2] = 2*rho*x[1]*x[2]/div;
+    l3[0] = 2*rho*x[2]*x[0]/div;
+    l3[1] = 2*rho*x[2]*x[1]/div;
+    l3[2] = 6*x[2] + 2*rho*(1 - (pow(x[0],2) + pow(x[1],2))/div);
+
+    std::valarray<double> a (l1, 3);
+    std::valarray<double> b (l2, 3);
+    std::valarray<double> c (l3, 3);
     M[0] = a;
     M[1] = b;
     M[2] = c;
@@ -81,6 +124,18 @@ std::valarray<double> multVetMatriz(
         }
      }
      return V;
+}
+
+
+std::valarray<double> mulMatVet(
+    std::valarray<double> V1,
+    std::valarray< std::valarray<double> > M1,
+    int n =3){
+	std::valarray<double> V (n);
+	for (int i=0; i<n; i++){
+		V[i] = (M1[i]*V1).sum();
+	}
+
 }
 
 
@@ -190,6 +245,7 @@ std::valarray<double> qNewton(std::valarray<double> x){
               hess[2][0]*gf[0]+hess[2][1]*gf[1]+hess[2][2]*gf[2]};
         t = armijo(x, d, 0.8, 0.25);
         // std::cout <<"Saí do Armijo"<<std::endl;
+        d = -1.0*d;
         x0 = x;
         x = x + t*d;
         // std::cout <<"Calculei x0 e x"<<std::endl;
