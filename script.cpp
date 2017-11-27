@@ -40,7 +40,7 @@ std::valarray<double> gradiente(std::valarray<double> x){
         t = armijo(x, d, 0.8, 0.25);
         x = x + t*d;
         if (grad(x).sum() < 1.8*pow(10,307)){
-            std::cout << "ERRO: Funcao nao possui ponto estacionario" << std::endl;
+            std::cout << "ERRO: Funcao nao converge para ponto estacionario" << std::endl;
             exit(EXIT_FAILURE);
         }
     }
