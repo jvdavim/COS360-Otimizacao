@@ -38,12 +38,12 @@ std::valarray<double> grad(std::valarray<double> x, double rho=1.0, bool penExt=
     return resultado;
 }
 
-double armijo(std::valarray<double>& x, std::valarray<double>& d, double g, double n ){
+double armijo(std::valarray<double>& x, std::valarray<double>& d, double g, double n, double rho ){
     // Funcao de armijo. Retorna um tamanho de passo
     double t = 1.0;
     // std::valarray<double> arg = x + t*d;
     // std::cout << "Chamei o armijo" << std::endl;
-    while (f(x + t*d) > f(x) + n*t*((grad(x)*d).sum())){
+    while (fi(x + t*d, rho) > fi(x, rho) + n*t*((grad(x, rho, true)*d).sum())){
         // std::cout << "Armijo t = " << t << std::endl;
         t = g*t;
     }
@@ -146,16 +146,14 @@ std::valarray< std::valarray<double> > multMatriz(
     int n =3){
     //Multipica duas matrizes M1 e M2
     std::valarray< std::valarray<double> > M (n);
-    std::valarray<double> temp (n);
-    double aux[n];
+    std::valarray<double> zero (0.0,n);
+    for (int i=0; i<n; i++){M[i] = zero;}
+
     for (int i=0; i<n; i++){
         for (int j=0; j<n; j++){
-            aux[j] = 0;
             for (int k=0; k<n; k++){
-                aux[j] += M1[i][k]*M2[k][j];
+                M[i][j] += M1[i][k]*M2[k][j];
             }
-        temp = {aux[0], aux[1], aux[2]};
-        M[j] = temp;
         }
     }
     return M;
@@ -232,15 +230,25 @@ void printVetor(std::valarray <double> V, int n=3){
 
 std::valarray< std::valarray<double> > bfgs(
 	std::valarray< std::valarray<double> > h,
-	std::valarray<double> pk,
-	std::valarray<double> qk){
+	std::valarray<double> p,
+	std::valarray<double> q){
 	//Utiliza o metodo BFGS para calcular a aproximacao da inversa da hessiana
 	//multVetor(pk,qk) retorna uma matriz que é multiplicada por outra matriz
 	//Depois efetua-se uma soma de matrizes e por fim, dividi-se a matriz por um escalar 
-	double denominador = (pk*qk).sum();
-	double numerador1 = (multVetMatriz(qk,h)*qk).sum();
-	std::valarray< std::valarray<double> > numerador2 = multEscalar(multVetor(pk,pk), (1+numerador1/denominador));
-	std::valarray< std::valarray<double> > numerador3 = somaMatriz(multMatriz(multVetor(pk,qk),h), multMatriz(h, multVetor(qk,pk)));
+	double denominador = (p*q).sum();
+	double numerador1 = (multVetMatriz(q,h)*q).sum();
+	std::valarray< std::valarray<double> > numerador2 = multEscalar(multVetor(p,p), (1+numerador1/denominador));
+	std::valarray< std::valarray<double> > m1 = multMatriz(multVetor(p,q),h);
+	std::valarray< std::valarray<double> > m2 = multMatriz(h,multVetor(p,q));
+	std::valarray< std::valarray<double> > numerador3 = somaMatriz(multMatriz(multVetor(p,q),h), multMatriz(h, multVetor(q,p)));
+	// std::cout<<denominador<<std::endl;
+	// std::cout<<numerador1<<std::endl;
+	// printMatriz(numerador2);
+	// std::cout<<"===================="<<std::endl;
+	// printMatriz(multVetor(p,q));
+	// printMatriz(multVetor(q,p));
+	// printMatriz(numerador3);
+
 	return subMatriz(somaMatriz(h, divMatriz(numerador2, denominador)), divMatriz(numerador3, denominador));
 
 }
@@ -251,29 +259,39 @@ std::valarray<double> qNewton(std::valarray<double> x, double rho = 1.0, double 
     // hess = hessiana(x);
     // hess = getHessiana(x);
     hess = getIdentidade(3); //hessiana inicial assume valor matriz identidade
-    double t;
     int nIter = 0;
     std::valarray<double> gf (3); //vetor gradiente
-    std::valarray<double> d (1.0, 3); //direção de descida
+    std::valarray<double> d (3); //direção de descida
     std::valarray<double> x0 (3); //ponto x anterior
     std::valarray<double> p (3);
     std::valarray<double> q (3);
-    while (norma(grad(x)) > epslon || nIter < maxIter){
-        gf = grad(x);
+    while (norma(grad(x, rho, true)) > epslon || nIter < maxIter){
+        gf = grad(x, rho, true);
         
 		d = (-1.0)*multMatVet(hess, gf);
+		// printVetor(gf);
         x0 = x; //guarda o x anterior antes de atualizar
-        x+= armijo(x, d, 0.8, 0.25)*d;
+        x+= armijo(x, d, 0.8, 0.25, rho)*d;
+        // std::cout<< armijo(x, d, 0.8, 0.25, rho)<<std::endl;
         // printMatriz(hess);
         // printVetor(d);
         // printVetor(x);
-        // getchar();
+        
 
         // //Calcular 'p' e 'q'
         p = x-x0; //diferença entre x atual e x anterior (x0)
-        q = grad(x)-grad(x0); //diferença entre gradiente calculado no ponto x atual e no ponto x anterior
+        q = grad(x, rho, true)-grad(x0, rho, true); //diferença entre gradiente calculado no ponto x atual e no ponto x anterior
+
+        // printMatriz(hess);
+        // printVetor(x);
+		//getchar();
         hess = bfgs(hess, p, q);
+        // printVetor(p);
+        // printVetor(q);
+
+        rho= rho*3; //beta
         nIter++;
+        
     }
     printVetor(x);
     return x;
@@ -282,10 +300,39 @@ std::valarray<double> qNewton(std::valarray<double> x, double rho = 1.0, double 
 
 
 int main(){
-    double initx[] = {0, -1, 1};
+    double initx[] = {1, -1, 1};
     std::valarray<double> x (initx, 3);
 
-    qNewton(x);
+    qNewton(x, 1.0);
+ 	// double aa[3] = {1,2,3};
+ 	// double bb[3] = {5,5,5};
+  //   std::valarray< std::valarray<double> > m1 (3);
+  //   std::valarray< std::valarray<double> > m2 (3);
+  //   std::valarray<double> aaa (aa, 3);
+  //   std::valarray<double> bbb (bb, 3);
+  //   m1[0]=aaa;
+  //   m1[1]=bbb;
+  //   m1[2]=aaa;
+  //   m2[0]=bbb;
+  //   m2[1]=aaa;
+  //   m2[2]=bbb;
+  //   std::cout<<"===M1==="<<std::endl;
+  //   printMatriz(m1);
+  //   std::cout<<"===M2==="<<std::endl;
+  //   printMatriz(m2);
+  //   std::cout<<"========"<<std::endl;
+  //   printMatriz(multMatriz(m1,m2));
+  //   printMatriz(somaMatriz(m1,m2));
+  //   printMatriz(subMatriz(m1,m2));
+  //   printMatriz(multEscalar(m1,100));
+  //   printMatriz(divMatriz(m1,100));
+  //   printVetor(multVetMatriz(aaa,m1));
+  //   printMatriz(multVetor(aaa,aaa));
+
+
+    // std::valarray< std::valarray<double> > m3 (3);
+    // m3 = multMatriz(m1,m2);
+    // printMatriz(m3);
 
 return 0;
 }
