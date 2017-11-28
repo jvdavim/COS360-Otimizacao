@@ -24,9 +24,11 @@ std::valarray<double> grad(std::valarray<double> x){
 double armijo(std::valarray<double> x, std::valarray<double> d, double g, double n ){
     // Funcao de armijo. Retorna um tamanho de passo
     double t = 1;
+
     while (f(x + t*d) > f(x) + n*t*((grad(x)*d).sum())){
         t = g*t;
     }
+
     return t;
 }
 
@@ -35,15 +37,17 @@ std::valarray<double> gradiente(std::valarray<double> x){
     double epslon = 0.000000927;
     double t = 1;
     std::valarray<double> d;
-    while (t > epslon){
+
+    while (norma(grad(x)) > epslon){
         d = grad(x)*(-1.0);
         t = armijo(x, d, 0.8, 0.25);
         x = x + t*d;
-        if (grad(x).sum() < 1.8*pow(10,307)){
-            std::cout << "ERRO: Funcao nao converge para ponto estacionario" << std::endl;
-            exit(EXIT_FAILURE);
+        if (norma(grad(x)) > 1.8*pow(10,307)){
+            std::cout << "Funcao nao converge para ponto estacionario" << std::endl;
+            break;
         }
     }
+
     return x;
 }
 
