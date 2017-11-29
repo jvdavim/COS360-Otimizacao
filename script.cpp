@@ -1,5 +1,6 @@
 #include <iostream>
 #include "op.hpp"
+#include <time.h>
 
 /* Função objetivo */
 double f(std::valarray<double> x)
@@ -93,7 +94,7 @@ std::valarray< std::valarray<double> > bfgs(std::valarray< std::valarray<double>
 
 
 /* Método de Quase-Newton */
-std::valarray<double> qNewton(std::valarray<double> x, double rho = 1.0, double epslon = 10e-6)
+std::valarray<double> qNewton(std::valarray<double> x, double rho = 1.0)
 {
 	std::valarray< std::valarray<double> > hess (3);
 	hess = getIdentidade(3); //hessiana inicial assume valor matriz identidade
@@ -126,7 +127,7 @@ std::valarray<double> qNewton(std::valarray<double> x, double rho = 1.0, double 
 
 
 /* Método do gradiente -- Retorna um ponto estacionário usando o passo calculado por armijo */
-std::valarray<double> gradiente(std::valarray<double> x, double rho = 1.0, double epslon = 10e-6)
+std::valarray<double> gradiente(std::valarray<double> x, double rho = 1.0)
 {
 	double t = 1;
 	std::valarray<double> d (3);
@@ -140,12 +141,13 @@ std::valarray<double> gradiente(std::valarray<double> x, double rho = 1.0, doubl
 		x = x + t*d;
 		
 		if (norma(grad(x, rho, true)) > 1.8*pow(10,307)){
-			std::cout << "Função não converge para ponto estacionário" << std::endl;
 			break;
 		}
 
 		nIter++;
 	}
+
+	std::cout << "Iter. Gradiente: " << nIter << std::endl;
 
 	return x;
 }
@@ -161,12 +163,14 @@ std::valarray<double> penalidade(std::valarray<double> x, double rho=1.0, double
 	while(norma(x - x0) > epslon)
 	{
 		x0 = x;
-		x = qNewton(holder, rho);
+		x = gradiente(holder, rho);
 		rho = rho*beta;   
 		nIter++;
 	}
 
-	std::cout << "Número de iterações: " << nIter << std::endl;
+	std::cout << "Iter. Penalidade: " << nIter << std::endl;
+	std::cout << "Opt. Point: ";
+	printVetor(x);
 
 	return x;
 }
@@ -174,11 +178,24 @@ std::valarray<double> penalidade(std::valarray<double> x, double rho=1.0, double
 
 int main(){
 
+	std::valarray<double> y;
+
 	/* Vetor inicial x */
 	double initx[] = {1, 1, 1};
 	std::valarray<double> x (initx, 3);
+	std::cout << "X0: ";
+	printVetor(x);
 
-	printVetor(penalidade(x));
+	/* Medir o tempo de execução */
+	clock_t Ticks[2];
+	Ticks[0] = clock();
+	y = penalidade(x); // x, rho
+	Ticks[1] = clock();
+	double Tempo = (Ticks[1] - Ticks[0]) * 1000.0 / CLOCKS_PER_SEC;
+	/* ------------------------- */
+
+	std::cout << "Opt. Value: " << f(y) << std::endl;
+	std::cout << "Elapsed time: " << Tempo << " ms" << std::endl;
 
 	return 0;
 }
