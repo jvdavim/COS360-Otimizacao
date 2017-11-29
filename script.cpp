@@ -2,6 +2,8 @@
 #include "op.hpp"
 #include <time.h>
 
+#define INF 1.8*pow(10,307)
+
 /* Função objetivo */
 double f(std::valarray<double> x)
 {
@@ -140,7 +142,7 @@ std::valarray<double> gradiente(std::valarray<double> x, double rho = 1.0)
 		x0 = x;
 		x = x + t*d;
 		
-		if (norma(grad(x, rho, true)) > 1.8*pow(10,307)){
+		if (norma(grad(x, rho, true)) > INF){
 			break;
 		}
 
@@ -156,11 +158,13 @@ std::valarray<double> gradiente(std::valarray<double> x, double rho = 1.0)
 /* Algoritmo de Penalidade Exterior */
 std::valarray<double> penalidade(std::valarray<double> x, double rho=1.0, double beta=3, double epslon=10e-6)
 {
-	std::valarray<double> x0 (3);
+	double initx[] = {1, 1, 1};
+	std::valarray<double> x0 (initx, 3);
 	std::valarray<double> holder = x;
 	int nIter = 0;
+	x0 = x - x0;
 
-	while(norma(x - x0) > epslon)
+	while(norma(x - x0) > epslon && nIter < 100)
 	{
 		x0 = x;
 		x = gradiente(holder, rho);
@@ -171,6 +175,7 @@ std::valarray<double> penalidade(std::valarray<double> x, double rho=1.0, double
 	std::cout << "Iter. Penalidade: " << nIter << std::endl;
 	std::cout << "Opt. Point: ";
 	printVetor(x);
+	std::cout << "Error: " << 1 - sqrt(pow(x[0], 2) + pow(x[1], 2) + pow(x[2], 2)) << std::endl;
 
 	return x;
 }

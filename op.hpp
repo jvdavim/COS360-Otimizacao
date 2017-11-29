@@ -135,7 +135,7 @@ void printMatriz(std::valarray< std::valarray<double> > M, int n=3)
 
 void printVetor(std::valarray <double> V, int n=3)
 {
-    std::cout<<"[";
+    std::cout<<"[ ";
 
     for (int i=0; i<n; i++){
         std::cout << V[i] << " ";
